@@ -3,6 +3,7 @@ using System.Text;
 using WavesCS;
 using CommandLine;
 using CommandLine.Text;
+using Newtonsoft.Json;
 
 namespace test
 {
@@ -59,10 +60,14 @@ namespace test
 
         static int RunShowAndReturnExitCode(ShowOptions opts)
         {
+            // get account
             var account = GetAccount(opts.Seed, opts.Base58);
-            Console.WriteLine(account.Address);
+            Console.WriteLine($"Address: {account.Address}");
+
+            // get balance
             var node = new Node();
-            Console.WriteLine(node.GetBalance(account.Address, ASSET_ID));
+            var balance = node.GetBalance(account.Address, ASSET_ID);
+            Console.WriteLine($"Balance: {balance}");
 
             return 0;
         }
@@ -70,18 +75,18 @@ namespace test
         static int RunSpendAndReturnExitCode(SpendOptions opts)
         {
             long fee = 10;
+
+            // get account
             var account = GetAccount(opts.Seed, opts.Base58);
+            Console.WriteLine($"Source Address: {account.Address}");
 
             // create transaction to transfer our asset (using fee sponsorship)
             var tx = Transactions.MakeTransferTransaction(account, opts.Recipient, opts.Amount, ASSET_ID, fee, ASSET_ID, "");
-            Console.WriteLine(account.Address);
-            foreach (var item in tx)
-            {
-                Console.WriteLine(" - " + item.Key);
-                Console.WriteLine("    " + item.Value);
-            }
+            Console.WriteLine("Transaction:");
+            Console.WriteLine(JsonConvert.SerializeObject(tx, Formatting.Indented));
 
             // connect to a public node and broadcast the transaction
+            Console.WriteLine("Broadcasting transaction...");
             var node = new Node();
             Console.WriteLine(node.Broadcast(tx));
 
