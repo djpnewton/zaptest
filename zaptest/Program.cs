@@ -17,6 +17,16 @@ namespace test
         public bool Base58 { get; set; }
     }
 
+    [Verb("list", HelpText = "list zap transactions")]
+    class ListOptions
+    { 
+        [Option('s', "seed", Required = true, HelpText = "Seed (used to generate account)")]
+        public string Seed { get; set; }
+
+        [Option('b', "base58", Required = false, Default = false, HelpText = "Seed is base58 encoded")]
+        public bool Base58 { get; set; }
+    }
+
     [Verb("spend", HelpText = "Spend zap - send funds from an account")]
     class SpendOptions
     { 
@@ -39,9 +49,10 @@ namespace test
 
         static int Main(string[] args)
         {
-            return CommandLine.Parser.Default.ParseArguments<ShowOptions, SpendOptions>(args)
+            return CommandLine.Parser.Default.ParseArguments<ShowOptions, ListOptions, SpendOptions>(args)
                 .MapResult(
                 (ShowOptions opts) => RunShowAndReturnExitCode(opts),
+                (ListOptions opts) => RunListAndReturnExitCode(opts),
                 (SpendOptions opts) => RunSpendAndReturnExitCode(opts),
                 errs => 1);
         }
@@ -66,8 +77,25 @@ namespace test
 
             // get balance
             var node = new Node();
-            var balance = node.GetBalance(account.Address, ASSET_ID);
+            var asset = node.GetAsset(ASSET_ID);
+            var balance = node.GetBalance(account.Address, asset);
             Console.WriteLine($"Balance: {balance}");
+
+            return 0;
+        }
+
+        static int RunListAndReturnExitCode(ListOptions opts)
+        {
+            // get account
+            var account = GetAccount(opts.Seed, opts.Base58);
+            Console.WriteLine($"Address: {account.Address}");
+
+            // get transaction list
+            var node = new Node();
+            var txs = node.ListTransactions(account.Address);
+            Console.WriteLine("Txs:");            
+            foreach (var tx in txs)
+                Console.WriteLine(JsonConvert.SerializeObject(tx.GetJson(), Formatting.Indented));
 
             return 0;
         }
@@ -76,18 +104,22 @@ namespace test
         {
             long fee = 10;
 
+            // get asset details
+            var node = new Node();
+            var asset = new Node().GetAsset(ASSET_ID);
+
             // get account
             var account = GetAccount(opts.Seed, opts.Base58);
             Console.WriteLine($"Source Address: {account.Address}");
 
             // create transaction to transfer our asset (using fee sponsorship)
-            var tx = Transactions.MakeTransferTransaction(account, opts.Recipient, opts.Amount, ASSET_ID, fee, ASSET_ID, "");
+            var tx = new TransferTransaction(account.PublicKey, opts.Recipient, asset, opts.Amount, fee, asset);
+            tx.Sign(account);
             Console.WriteLine("Transaction:");
             Console.WriteLine(JsonConvert.SerializeObject(tx, Formatting.Indented));
 
-            // connect to a public node and broadcast the transaction
+            // broadcast the transaction
             Console.WriteLine("Broadcasting transaction...");
-            var node = new Node();
             Console.WriteLine(node.Broadcast(tx));
 
             return 0;

@@ -1,0 +1,4 @@
+[submodule "WavesCS"]
+	path = WavesCS
+	url = https://github.com/djpnewton/WavesCS.git
+	branch = listtransactions
