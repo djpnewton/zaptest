@@ -113,7 +113,7 @@ namespace test
             Console.WriteLine($"Source Address: {account.Address}");
 
             // create transaction to transfer our asset (using fee sponsorship)
-            var tx = new TransferTransaction(account.PublicKey, opts.Recipient, asset, opts.Amount, fee, asset);
+            var tx = new TransferTransaction(account.PublicKey, DateTime.UtcNow, opts.Recipient, asset, opts.Amount, fee, asset);
             tx.Sign(account);
             Console.WriteLine("Transaction:");
             Console.WriteLine(JsonConvert.SerializeObject(tx, Formatting.Indented));
