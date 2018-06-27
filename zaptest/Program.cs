@@ -41,6 +41,9 @@ namespace test
 
         [Option('a', "amount", Required = true, HelpText = "Amount in 1/100s of a zap")]
         public long Amount { get; set; }
+
+        [Option('A', "attachment", Required = false, HelpText = "Attachment (user defined data) associated with this transaction")]
+        public string Attachment { get; set; }
     }
 
     class Program
@@ -112,8 +115,16 @@ namespace test
             var account = GetAccount(opts.Seed, opts.Base58);
             Console.WriteLine($"Source Address: {account.Address}");
 
+            // encode attachment
+            byte[] attachment = null;
+            if (!string.IsNullOrEmpty(opts.Attachment))
+            {
+                attachment = Encoding.UTF8.GetBytes(opts.Attachment);
+                Console.WriteLine($"Base58 Attachment: {opts.Attachment} ({attachment.Length})");
+            }
+
             // create transaction to transfer our asset (using fee sponsorship)
-            var tx = new TransferTransaction(account.PublicKey, DateTime.UtcNow, opts.Recipient, asset, opts.Amount, fee, asset);
+            var tx = new TransferTransaction(account.PublicKey, DateTime.UtcNow, opts.Recipient, asset, opts.Amount, fee, asset, attachment);
             tx.Sign(account);
             Console.WriteLine("Transaction:");
             Console.WriteLine(JsonConvert.SerializeObject(tx, Formatting.Indented));
