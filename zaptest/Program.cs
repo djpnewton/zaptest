@@ -105,7 +105,7 @@ namespace test
 
         static int RunSpendAndReturnExitCode(SpendOptions opts)
         {
-            long fee = 10;
+            decimal fee = 0.1M;
 
             // get asset details
             var node = new Node();
