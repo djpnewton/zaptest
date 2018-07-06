@@ -105,11 +105,14 @@ namespace test
 
         static int RunSpendAndReturnExitCode(SpendOptions opts)
         {
-            decimal fee = 0.1M;
-
-            // get asset details
+            // get asset details and calc fee in asset units
             var node = new Node();
             var asset = new Node().GetAsset(ASSET_ID);
+            var assetDetails = node.GetObject($"assets/details/{ASSET_ID}");
+            decimal minFee = new Decimal(Convert.ToInt32(assetDetails["minSponsoredAssetFee"]));
+            var decimals = Convert.ToInt32(assetDetails["decimals"]);
+            var fee = minFee / (int)Math.Pow(10, decimals);
+            System.Diagnostics.Debug.Assert(fee < 1, "fee sponsorship is too expensive!!!");
 
             // get account
             var account = GetAccount(opts.Seed, opts.Base58);
